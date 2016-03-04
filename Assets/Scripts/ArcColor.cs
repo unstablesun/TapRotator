@@ -3,29 +3,42 @@ using System.Collections;
 
 public class ArcColor : MonoBehaviour {
 
+	//task
+
+	private float _elaspedTime = 0.0f;
+	private float _taskTime = 0.0f;
+
 	// Use this for initialization
-	void Start () {
+	void Start () 
+	{
 		
 
-		//distance =Vector3.Distance(transform.position,target.position);
-
-
-		//Vector3 heading = target.position - player.position;
-
-
-		RaycastHit hit;
-		float distanceToGround = 0;
-
-		if (Physics.Raycast(transform.position, -Vector3.up, out hit, 100.0F)) {
-			distanceToGround = hit.distance;
-		}
 
 
 	}
 	
-	// Update is called once per frame
-	void Update () {
-		//GetComponent<Renderer>().material.SetFloat("_Cutoff", Mathf.InverseLerp(0, Screen.width, Input.mousePosition.x)); 
-	
+	void Update () 
+	{
+
+
+
+		_elaspedTime += Time.deltaTime;
+		if (_elaspedTime > _taskTime) {
+
+
+			//determine next task
+
+			int rInt = UnityEngine.Random.Range (0, 100);
+
+			float fInt = UnityEngine.Random.value;
+
+
+
+
+
+			_elaspedTime = 0.0f;			
+		}
+
+
 	}
 }

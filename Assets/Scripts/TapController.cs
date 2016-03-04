@@ -29,6 +29,10 @@ public class TapController : MonoBehaviour {
 	private int _byeIn = 0;
 	private bool _insertTapIndicator = false;
 
+	AudioBeatDetector audioBeatDetectorScript = null;
+
+
+
 
 	void Awake () 
 	{
@@ -52,6 +56,8 @@ public class TapController : MonoBehaviour {
 
 			TapObjects.Add (_tapObj);
 		}
+
+		FindBeatDetector ();
 	}
 	
 	void Update () {
@@ -59,6 +65,8 @@ public class TapController : MonoBehaviour {
 
 		//poll for real beat
 
+
+		DetermineBeat ();
 
 
 
@@ -239,5 +247,30 @@ public class TapController : MonoBehaviour {
 
 		return noConflict;
 	}
+
+
+	private void DetermineBeat()
+	{
+		if (audioBeatDetectorScript.areBeatDeltasReady() == true) {
+		
+			float delta = audioBeatDetectorScript.getBeatsAverageDeltaTime ();
+
+		}
+		
+	}
+
+	private void FindBeatDetector()
+	{
+		GameObject _audioBeatDetectorObject = GameObject.Find ("AudioBeatDetector");
+		if (_audioBeatDetectorObject != null) {
+			audioBeatDetectorScript = _audioBeatDetectorObject.GetComponent<AudioBeatDetector> ();
+			if(audioBeatDetectorScript != null) {
+				return;
+			}
+			Debug.Log ("_audioBeatDetectorScript = null");
+		}
+		Debug.Log ("_audioBeatDetectorObject = null");
+	}
+
 		
 }

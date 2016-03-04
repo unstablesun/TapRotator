@@ -15,6 +15,14 @@ public class AudioBeatDetector : MonoBehaviour
 	private float lastPeak = 0f;
 	private float fallOff = 0.98f;
 
+
+	private bool firstBeat = true;
+	private float lastBeatTime = 0.0f;
+	private float beatNumDeltaSamples = 0.0f;
+	private float beatsDeltaTimeTotal = 0.0f;
+	private float beatsAverageDeltaTime = 0.0f;
+	private bool beatDeltasReady = false;
+
 	void Awake () 
 	{
 		//Get and store a reference to the following attached components: 
@@ -37,6 +45,16 @@ public class AudioBeatDetector : MonoBehaviour
 		GetDynamicOutput ();
 	}
 
+	public bool areBeatDeltasReady()
+	{
+		return beatDeltasReady;
+	}
+
+	public float getBeatsAverageDeltaTime()
+	{
+		return beatsAverageDeltaTime / beatNumDeltaSamples;
+	}
+
 
 	private void GetDynamicSpectrum()
 	{
@@ -47,81 +65,90 @@ public class AudioBeatDetector : MonoBehaviour
 
 	private void GetDynamicOutput()
 	{
+		
 		//Channel 1
 		aSource.GetOutputData (this.samplesL, 0);
 
-		float average = 0.0f;
-		float max = 0.0f;
+		float averageL = 0.0f;
+		float maxL = 0.0f;
 		//float min = 10000.0f;
 		for(int i=0; i<samplesL.Length;i++)
 		{
 			if (samplesL [i] < 0) {
 
 				float v = samplesL [i] * -1.0f;
-				average += v;
+				averageL += v;
 
-				if(v > max)
-					max = v;
+				if(v > maxL)
+					maxL = v;
 
 			} else {
 
 				float v = samplesL [i];
-				average += samplesL [i];
+				averageL += samplesL [i];
 
-				if(v > max)
-					max = v;
-
+				if(v > maxL)
+					maxL = v;
 			}
 		}
-		average /= samplesL.Length;
-
-		//DrawSingleCube(0, average);
-		//DrawSingleCube(1, max);
-
+		averageL /= samplesL.Length;
 
 		//Channel 2
-		aSource.GetOutputData (this.samplesL, 1);
+		aSource.GetOutputData (this.samplesR, 1);
 
-		average = 0.0f;
-		max = 0.0f;
+		float averageR = 0.0f;
+		float maxR = 0.0f;
 		//min = 10000.0f;
 		for(int i=0; i<samplesL.Length;i++)
 		{
 			if (samplesL [i] < 0) {
 
 				float v = samplesL [i] * -1.0f;
-				average += v;
+				averageR += v;
 
-				if(v > max)
-					max = v;
+				if(v > maxR)
+					maxR = v;
 
 			} else {
 
 				float v = samplesL [i];
-				average += samplesL [i];
+				averageR += samplesL [i];
 
-				if(v > max)
-					max = v;
-
+				if(v > maxR)
+					maxR = v;
 			}
-
-
 		}
-		//Debug.Log ("averageRaw = " + average.ToString());
-		average /= samplesL.Length;
+		averageR /= samplesL.Length;
 
-		if (max > threshold) {
-			lastPeak = max;
 
-			Debug.Log ("average = " + average.ToString() + " max = " + max.ToString());
+		float averageMax = (maxL + maxR) / 2.0f;
 
+		if (lastPeak < threshold && averageMax > threshold) {
+			lastPeak = averageMax;
+
+			if (firstBeat == true) {
+			
+				lastBeatTime = Time.time;
+			} else {
+
+				float beatTime = Time.time;
+				float deltaTime = beatTime - lastBeatTime;
+
+				if (beatNumDeltaSamples < 32) {
+
+					//beatDeltas [beatDeltaIndex] = deltaTime;
+
+					beatsDeltaTimeTotal += deltaTime;
+					beatNumDeltaSamples++;
+
+					beatDeltasReady = true;
+				}
+			}
+				
+			Debug.Log ("average = " + averageMax.ToString() + " maxL = " + maxL.ToString() + " maxR = " + maxR.ToString());
 		}
 
 		lastPeak *= fallOff;
-		//DrawSingleCube(3, average);
-		//DrawSingleCube(2, max);
-
-
 
 	}
 
