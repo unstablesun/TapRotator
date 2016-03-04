@@ -13,7 +13,7 @@ public class TapObject : MonoBehaviour
 	{
 		Reset,
 		InPool, 
-		Onset,  
+		UpSlope,  
 		DownSlope, 
 		FadeOut
 	};
@@ -80,7 +80,7 @@ public class TapObject : MonoBehaviour
 	void Update ()
 	{
 
-		if (_state == eState.Onset || _state == eState.DownSlope || _state == eState.FadeOut) {
+		if (_state == eState.UpSlope || _state == eState.DownSlope || _state == eState.FadeOut) {
 
 			float angleDelta = Time.deltaTime * velocity;
 			currentAngle += angleDelta;
@@ -102,8 +102,8 @@ public class TapObject : MonoBehaviour
 			}
 		}
 
-		if (_state == eState.FadeOut) 
-		{
+		if (_state == eState.FadeOut) {
+			
 			Color c = tapSprite.GetComponent<Renderer> ().material.color;
 			float alpha = c.a;
 			alpha *= 0.95f;

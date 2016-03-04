@@ -12,6 +12,7 @@ public class TapController : MonoBehaviour {
 	public GameObject Zenith;
 	public Animation ZAnim;
 
+	private float _nadir = 180.0f;
 
 	private float _elaspedTime = 0.0f;
 	private float _insertTapTime = 0.5f;
@@ -23,14 +24,14 @@ public class TapController : MonoBehaviour {
 	private float _noteSpacing = 30.0f;
 
 	private float _lastTime = 0.0f;
-	private float _detaPressTime = 0.0f;
+	//private float _detaPressTime = 0.0f;
 	private float _degressPerSecond = 0.0f;
 
-	float averageDeltaTime = 0f;
-	float lastBeatTime = 0f;
+	//float averageDeltaTime = 0f;
+	//float lastBeatTime = 0f;
 
 
-	private int _byeIn = 0;
+	//private int _byeIn = 0;
 	private bool _insertTapIndicator = false;
 
 	AudioBeatDetector audioBeatDetectorScript = null;
@@ -62,6 +63,8 @@ public class TapController : MonoBehaviour {
 		}
 
 		FindBeatDetector ();
+
+		audioBeatDetectorScript.StartSampling (2);
 	}
 	
 	void Update () {
@@ -121,7 +124,7 @@ public class TapController : MonoBehaviour {
 			}
 		}
 			
-		QueryTapObjectsOnset ();
+		QueryTapObjectsUpSlope ();
 
 		_elaspedTime += Time.deltaTime;
 		if (_elaspedTime > _insertTapTime) {
@@ -129,7 +132,7 @@ public class TapController : MonoBehaviour {
 			if (_insertTapIndicator == true) {
 				_elaspedTime = 0.0f;
 
-				AddBeatIndicator (180.0f - _noteSpacing * 3, _degressPerSecond);
+				AddBeatIndicator (_nadir - _noteSpacing * 3, _degressPerSecond);
 			}
 		}
 	
@@ -148,21 +151,25 @@ public class TapController : MonoBehaviour {
 		GameObject _tObj = GetAvailableTapObject ();
 		if (_tObj != null) {
 			TapObject tObjectScript = _tObj.GetComponent<TapObject> ();
-			tObjectScript._state = TapObject.eState.Onset;
-			tObjectScript.SetPositionToNadir ();
-			tObjectScript.SetStartAngle (angle);
-			tObjectScript.SetStartVelocity (velocity);
+			if (tObjectScript != null) {
+				tObjectScript._state = TapObject.eState.UpSlope;
+				tObjectScript.SetPositionToNadir ();
+				tObjectScript.SetStartAngle (angle);
+				tObjectScript.SetStartVelocity (velocity);
+			} else {
+				Debug.Log("tObjectScript = null : no script attached");
+			}
 		} else {
-			Debug.Log("tObj == null : error object not found");
+			Debug.Log("tObj = null : error object not found");
 		}
 	}
 
-	void QueryTapObjectsOnset() 
+	void QueryTapObjectsUpSlope() 
 	{
 		foreach(GameObject tObj in TapObjects)
 		{
 			TapObject tapObjectScript = tObj.GetComponent<TapObject> ();
-			if(tapObjectScript._state == TapObject.eState.Onset)
+			if(tapObjectScript._state == TapObject.eState.UpSlope)
 			{
 				float cAngle = tapObjectScript.currentAngle;
 
@@ -179,7 +186,7 @@ public class TapController : MonoBehaviour {
 		foreach(GameObject tObj in TapObjects)
 		{
 			TapObject tapObjectScript = tObj.GetComponent<TapObject> ();
-			if(tapObjectScript._state == TapObject.eState.Onset || tapObjectScript._state == TapObject.eState.DownSlope)
+			if(tapObjectScript._state == TapObject.eState.UpSlope || tapObjectScript._state == TapObject.eState.DownSlope)
 			{
 				float cAngle = tapObjectScript.currentAngle;
 
@@ -238,7 +245,7 @@ public class TapController : MonoBehaviour {
 		foreach(GameObject tObj in TapObjects)
 		{
 			TapObject tapObjectScript = tObj.GetComponent<TapObject> ();
-			if(tapObjectScript._state == TapObject.eState.Onset || tapObjectScript._state == TapObject.eState.DownSlope)
+			if(tapObjectScript._state == TapObject.eState.UpSlope || tapObjectScript._state == TapObject.eState.DownSlope)
 			{
 				float cAngle = tapObjectScript.currentAngle;
 
@@ -257,21 +264,31 @@ public class TapController : MonoBehaviour {
 
 	private void DetermineBeat()
 	{
-		if (audioBeatDetectorScript.areBeatDeltasReady() == true && _insertTapIndicator == false) {
+		if (audioBeatDetectorScript.areBeatDeltasReady() == true) {
 		
 			float averageDeltaTime = audioBeatDetectorScript.getBeatsAverageDeltaTime ();
-			float lastBeatTime = audioBeatDetectorScript.getLastBeatTime ();
+			//float lastBeatTime = audioBeatDetectorScript.getLastBeatTime ();
 
 			_insertTapTime = averageDeltaTime;
 			_degressPerSecond = _noteSpacing / averageDeltaTime;
 
-			_insertTapIndicator = true;
 
-			AddBeatIndicator (180.0f - _noteSpacing, _degressPerSecond);
-			AddBeatIndicator (180.0f - _noteSpacing * 2, _degressPerSecond);
-			AddBeatIndicator (180.0f - _noteSpacing * 3, _degressPerSecond);
+			if (_insertTapIndicator == false) {
+				_insertTapIndicator = true;
+
+				//add initial beats
+				AddBeatIndicator (_nadir - _noteSpacing, _degressPerSecond);
+				AddBeatIndicator (_nadir - _noteSpacing * 2, _degressPerSecond);
+				AddBeatIndicator (_nadir - _noteSpacing * 3, _degressPerSecond);
+
+				_elaspedTime = 0;//probally needs to reset somewhere, here?
+			}
 
 			Debug.Log ("DetermineBeat - successFulStart : averageDeltaTime = " + averageDeltaTime);
+		}
+
+		if(audioBeatDetectorScript.isSampleReady() == true) {
+			audioBeatDetectorScript.StartSampling (4);
 		}
 		
 	}

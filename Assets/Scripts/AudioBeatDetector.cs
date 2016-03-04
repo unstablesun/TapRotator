@@ -4,6 +4,12 @@ using System.Collections;
 public class AudioBeatDetector : MonoBehaviour 
 {
 
+	public GameObject LeftChannelSprite;
+	public GameObject RightChannelSprite;
+	public GameObject BaseChannelSprite;
+	public GameObject ThresholdLevelSprite;
+	public GameObject MaxLevelSprite;
+
 	private AudioSource aSource;
 
 	private float[] samplesL = new float[256];
@@ -15,12 +21,33 @@ public class AudioBeatDetector : MonoBehaviour
 	private float lastPeak = 0f;
 	private float fallOff = 0.98f;
 
+	private float onSetTimeOffset = 0.0f;
+
+	private bool processBeats = false;
 
 	private bool firstBeat = true;
 	private float lastBeatTime = 0.0f;
+	private float numToSample = 4.0f;
 	private float beatNumDeltaSamples = 0.0f;
 	private float beatsDeltaTimeTotal = 0.0f;
 	private bool beatDeltasReady = false;
+
+	//channel stuff
+	private Vector3 maxLevelPos;
+	private Vector3 thresholdLevelPos;
+	private Vector3 leftChannelPos;
+	private Vector3 rightChannelPos;
+
+	private Transform baseChannelTransform = null;
+	private Transform thresholdLevelTransform = null;
+	private Transform maxLevelTransform = null;
+
+	private Transform leftChannelTransform = null;
+	private Transform rightChannelTransform = null;
+
+	private float meterMax = 5.0f;
+
+	private Vector3 gravity = new Vector3(0.0f,0.1f,0.0f);
 
 	void Awake () 
 	{
@@ -34,6 +61,21 @@ public class AudioBeatDetector : MonoBehaviour
 	{
 		aSource.Play ();
 
+		baseChannelTransform = BaseChannelSprite.transform;
+		thresholdLevelTransform = ThresholdLevelSprite.transform;
+		maxLevelTransform = MaxLevelSprite.transform;
+		leftChannelTransform = LeftChannelSprite.transform;
+		rightChannelTransform = RightChannelSprite.transform;
+
+
+		//set visual threshold level
+		thresholdLevelPos.Set (thresholdLevelTransform.position.x, baseChannelTransform.position.y + (meterMax * threshold), thresholdLevelTransform.position.z);
+		thresholdLevelTransform.position = thresholdLevelPos;
+
+		//set visual max level
+		maxLevelPos.Set (maxLevelTransform.position.x, baseChannelTransform.position.y + meterMax, maxLevelTransform.position.z);
+		maxLevelTransform.position = maxLevelPos;
+
 	}
 	
 	// Update is called once per frame
@@ -42,8 +84,39 @@ public class AudioBeatDetector : MonoBehaviour
 		GetDynamicSpectrum();
 
 		GetDynamicOutput ();
+
+		if (leftChannelTransform.position.y > baseChannelTransform.position.y) {
+			leftChannelTransform.position -= gravity;
+		} else {
+			//leftChannelTransform.position.y = baseChannelTransform.position.y;
+		}
+			
+		if (rightChannelTransform.position.y > baseChannelTransform.position.y) {
+			rightChannelTransform.position -= gravity;
+		} else {
+			//rightChannelTransform.position.y = baseChannelTransform.position.y;
+		}
+
 	}
 
+
+	public bool isSampleReady()
+	{
+		return (processBeats == false);
+	}
+
+	public void StartSampling(float num)
+	{
+		processBeats = true;
+		firstBeat = true;
+		beatDeltasReady = false;
+
+		beatNumDeltaSamples = 0.0f;
+		beatsDeltaTimeTotal = 0.0f;
+
+		numToSample = num;
+	}
+		
 	public bool areBeatDeltasReady()
 	{
 		bool ready = beatDeltasReady;
@@ -56,14 +129,14 @@ public class AudioBeatDetector : MonoBehaviour
 	{
 		float averageDeltaTime = beatsDeltaTimeTotal / beatNumDeltaSamples;
 
-		Debug.Log ("getBeatsAverageDeltaTime : averageDeltaTime = " + averageDeltaTime.ToString());
+		//Debug.Log ("getBeatsAverageDeltaTime : averageDeltaTime = " + averageDeltaTime.ToString());
 
 		return averageDeltaTime;
 	}
 
 	public float getLastBeatTime()
 	{
-		return lastBeatTime;
+		return lastBeatTime - onSetTimeOffset;
 	}
 
 	private void GetDynamicSpectrum()
@@ -134,30 +207,43 @@ public class AudioBeatDetector : MonoBehaviour
 		float averageMax = (maxL + maxR) / 2.0f;
 
 		if (lastPeak < threshold && averageMax > threshold) {
+
+
+			leftChannelPos.Set(leftChannelTransform.position.x, baseChannelTransform.position.y + (maxL * meterMax), leftChannelTransform.position.z);
+			rightChannelPos.Set(rightChannelTransform.position.x, baseChannelTransform.position.y + (maxR * meterMax), rightChannelTransform.position.z);
+
+			leftChannelTransform.position = leftChannelPos;
+			rightChannelTransform.position = rightChannelPos;
+
+
 			lastPeak = averageMax;
 
-			if (firstBeat == true) {
+			if (processBeats) {
+				
+				if (firstBeat == true) {
 			
-				lastBeatTime = Time.time;
-				firstBeat = false;
-			} else {
+					lastBeatTime = Time.time;
+					firstBeat = false;
 
-				float beatTime = Time.time;
-				float deltaTime = beatTime - lastBeatTime;
-				lastBeatTime = Time.time;
+				} else {
 
-				if (beatNumDeltaSamples < 8) {
+					float beatTime = Time.time;
+					float deltaTime = beatTime - lastBeatTime;
+					lastBeatTime = Time.time;
 
-					//beatDeltas [beatDeltaIndex] = deltaTime;
+					if (beatNumDeltaSamples < numToSample) {
 
-					beatsDeltaTimeTotal += deltaTime;
-					beatNumDeltaSamples += 1.0f;
+						beatsDeltaTimeTotal += deltaTime;
+						beatNumDeltaSamples += 1.0f;
+					} else {
+						beatDeltasReady = true;	
 
-					if(beatNumDeltaSamples > 6)
-						beatDeltasReady = true;
+						processBeats = false;
+					}
 				}
 			}
-				
+
+
 			Debug.Log ("average = " + averageMax.ToString() + 
 						" maxL = " + maxL.ToString() + 
 						" maxR = " + maxR.ToString() + 
