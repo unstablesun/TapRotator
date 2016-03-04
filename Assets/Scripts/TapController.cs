@@ -26,6 +26,10 @@ public class TapController : MonoBehaviour {
 	private float _detaPressTime = 0.0f;
 	private float _degressPerSecond = 0.0f;
 
+	float averageDeltaTime = 0f;
+	float lastBeatTime = 0f;
+
+
 	private int _byeIn = 0;
 	private bool _insertTapIndicator = false;
 
@@ -75,6 +79,7 @@ public class TapController : MonoBehaviour {
 			// check if any tap objects are with tolerance of apex
 			float currentTime = Time.time;
 
+			/*
 			if (_lastTime > 0.0) {
 				_detaPressTime = currentTime - _lastTime;
 				_byeIn++;
@@ -91,6 +96,7 @@ public class TapController : MonoBehaviour {
 					AddBeatIndicator (180.0f - _noteSpacing * 3, _degressPerSecond);
 				}
 			}
+			*/
 
 			_lastTime = Time.time;
 
@@ -98,13 +104,13 @@ public class TapController : MonoBehaviour {
 
 			if (_tObj == null) {
 				//record miss
-				if (_insertTapIndicator == true && _byeIn > 3) {
-					_insertTapIndicator = false;
-					_byeIn = 0;
+				//if (_insertTapIndicator == true && _byeIn > 3) {
+				//	_insertTapIndicator = false;
+				//	_byeIn = 0;
 					//clear all tap indicators?
 
 					//QueryTapObjectReset ();
-				}
+				//}
 			} else {
 				//successful 
 				TapObject tapObjectScript = _tObj.GetComponent<TapObject> ();
@@ -251,10 +257,21 @@ public class TapController : MonoBehaviour {
 
 	private void DetermineBeat()
 	{
-		if (audioBeatDetectorScript.areBeatDeltasReady() == true) {
+		if (audioBeatDetectorScript.areBeatDeltasReady() == true && _insertTapIndicator == false) {
 		
-			float delta = audioBeatDetectorScript.getBeatsAverageDeltaTime ();
+			float averageDeltaTime = audioBeatDetectorScript.getBeatsAverageDeltaTime ();
+			float lastBeatTime = audioBeatDetectorScript.getLastBeatTime ();
 
+			_insertTapTime = averageDeltaTime;
+			_degressPerSecond = _noteSpacing / averageDeltaTime;
+
+			_insertTapIndicator = true;
+
+			AddBeatIndicator (180.0f - _noteSpacing, _degressPerSecond);
+			AddBeatIndicator (180.0f - _noteSpacing * 2, _degressPerSecond);
+			AddBeatIndicator (180.0f - _noteSpacing * 3, _degressPerSecond);
+
+			Debug.Log ("DetermineBeat - successFulStart : averageDeltaTime = " + averageDeltaTime);
 		}
 		
 	}

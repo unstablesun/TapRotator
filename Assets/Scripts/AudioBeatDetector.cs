@@ -20,7 +20,6 @@ public class AudioBeatDetector : MonoBehaviour
 	private float lastBeatTime = 0.0f;
 	private float beatNumDeltaSamples = 0.0f;
 	private float beatsDeltaTimeTotal = 0.0f;
-	private float beatsAverageDeltaTime = 0.0f;
 	private bool beatDeltasReady = false;
 
 	void Awake () 
@@ -47,14 +46,25 @@ public class AudioBeatDetector : MonoBehaviour
 
 	public bool areBeatDeltasReady()
 	{
-		return beatDeltasReady;
+		bool ready = beatDeltasReady;
+		beatDeltasReady = false;
+
+		return ready;
 	}
 
 	public float getBeatsAverageDeltaTime()
 	{
-		return beatsAverageDeltaTime / beatNumDeltaSamples;
+		float averageDeltaTime = beatsDeltaTimeTotal / beatNumDeltaSamples;
+
+		Debug.Log ("getBeatsAverageDeltaTime : averageDeltaTime = " + averageDeltaTime.ToString());
+
+		return averageDeltaTime;
 	}
 
+	public float getLastBeatTime()
+	{
+		return lastBeatTime;
+	}
 
 	private void GetDynamicSpectrum()
 	{
@@ -129,23 +139,30 @@ public class AudioBeatDetector : MonoBehaviour
 			if (firstBeat == true) {
 			
 				lastBeatTime = Time.time;
+				firstBeat = false;
 			} else {
 
 				float beatTime = Time.time;
 				float deltaTime = beatTime - lastBeatTime;
+				lastBeatTime = Time.time;
 
-				if (beatNumDeltaSamples < 32) {
+				if (beatNumDeltaSamples < 8) {
 
 					//beatDeltas [beatDeltaIndex] = deltaTime;
 
 					beatsDeltaTimeTotal += deltaTime;
-					beatNumDeltaSamples++;
+					beatNumDeltaSamples += 1.0f;
 
-					beatDeltasReady = true;
+					if(beatNumDeltaSamples > 6)
+						beatDeltasReady = true;
 				}
 			}
 				
-			Debug.Log ("average = " + averageMax.ToString() + " maxL = " + maxL.ToString() + " maxR = " + maxR.ToString());
+			Debug.Log ("average = " + averageMax.ToString() + 
+						" maxL = " + maxL.ToString() + 
+						" maxR = " + maxR.ToString() + 
+						" beatNumDeltaSamples = " + beatNumDeltaSamples.ToString() + 
+						" beatsDeltaTimeTotal = " + beatsDeltaTimeTotal.ToString());
 		}
 
 		lastPeak *= fallOff;
