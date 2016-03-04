@@ -56,6 +56,12 @@ public class TapController : MonoBehaviour {
 	
 	void Update () {
 
+
+		//poll for real beat
+
+
+
+
 		if (Input.GetMouseButtonDown (0)) {
 
 			// check if any tap objects are with tolerance of apex

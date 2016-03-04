@@ -11,6 +11,9 @@ public class AudioBeatDetector : MonoBehaviour
 
 	private float[] spectrum = new float[64];
 
+	private float threshold = 0.5f;
+	private float lastPeak = 0f;
+	private float fallOff = 0.98f;
 
 	void Awake () 
 	{
@@ -106,9 +109,15 @@ public class AudioBeatDetector : MonoBehaviour
 		}
 		//Debug.Log ("averageRaw = " + average.ToString());
 		average /= samplesL.Length;
-		//Debug.Log ("average = " + average.ToString());
 
+		if (max > threshold) {
+			lastPeak = max;
 
+			Debug.Log ("average = " + average.ToString() + " max = " + max.ToString());
+
+		}
+
+		lastPeak *= fallOff;
 		//DrawSingleCube(3, average);
 		//DrawSingleCube(2, max);
 
