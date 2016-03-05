@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using System;
 
 public class AudioBeatDetector : MonoBehaviour 
 {
@@ -9,6 +11,17 @@ public class AudioBeatDetector : MonoBehaviour
 	public GameObject BaseChannelSprite;
 	public GameObject ThresholdLevelSprite;
 	public GameObject MaxLevelSprite;
+	public float threshold = 0.5f;
+	public float fallOff = 0.98f;
+
+	//for aligning spectral display
+	public GameObject CenterPoint;
+	public GameObject Zenith;
+
+
+
+	private List <GameObject> SpectrumDots = null;
+
 
 	private AudioSource aSource;
 
@@ -17,9 +30,7 @@ public class AudioBeatDetector : MonoBehaviour
 
 	private float[] spectrum = new float[64];
 
-	private float threshold = 0.5f;
 	private float lastPeak = 0f;
-	private float fallOff = 0.98f;
 
 	private float onSetTimeOffset = 0.0f;
 
@@ -49,11 +60,15 @@ public class AudioBeatDetector : MonoBehaviour
 
 	private Vector3 gravity = new Vector3(0.0f,0.1f,0.0f);
 
+
+
 	void Awake () 
 	{
 		//Get and store a reference to the following attached components: 
 		//AudioSource
 		this.aSource = GetComponent<AudioSource>();
+
+		SpectrumDots = new List<GameObject>();
 	}
 
 	// Use this for initialization
@@ -76,6 +91,23 @@ public class AudioBeatDetector : MonoBehaviour
 		maxLevelPos.Set (maxLevelTransform.position.x, baseChannelTransform.position.y + meterMax, maxLevelTransform.position.z);
 		maxLevelTransform.position = maxLevelPos;
 
+		float dotInc = 270.0f / 64.0f;
+		for (int t = 0; t < 64; t++) 
+		{
+			GameObject _dotObj = Instantiate (Resources.Load ("Prefabs/SpectralDot", typeof(GameObject))) as GameObject;
+
+			_dotObj.transform.position = new Vector3(Zenith.transform.position.x, Zenith.transform.position.y * -1.0f, Zenith.transform.position.z);
+
+			SpectralDot dotObjectScript = _dotObj.GetComponent<SpectralDot> ();
+			dotObjectScript.SetCenterPoint (new Vector3(CenterPoint.transform.position.x, CenterPoint.transform.position.y, CenterPoint.transform.position.z));
+			dotObjectScript.SetZenithPoint (new Vector3(Zenith.transform.position.x, Zenith.transform.position.y, Zenith.transform.position.z));
+
+
+			dotObjectScript.SetDotAngle (45.0f + ((float)t * dotInc));
+
+			SpectrumDots.Add (_dotObj);
+		}
+			
 	}
 	
 	// Update is called once per frame
@@ -142,7 +174,19 @@ public class AudioBeatDetector : MonoBehaviour
 	private void GetDynamicSpectrum()
 	{
 		aSource.GetSpectrumData(this.spectrum, 0, FFTWindow.BlackmanHarris);
+
+		for(int i=0; i<spectrum.Length;i++)
+		{
+			GameObject dotObj = SpectrumDots [i];
+
+			SpectralDot dotObjectScript = dotObj.GetComponent<SpectralDot> ();
+
+			dotObjectScript.SetTargetScale (Mathf.Clamp(this.spectrum[i] * (0.1f * i), 0, 0.1f));
+		}
 	}
+
+
+
 		
 
 

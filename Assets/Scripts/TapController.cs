@@ -23,7 +23,7 @@ public class TapController : MonoBehaviour {
 
 	private float _noteSpacing = 30.0f;
 
-	private float _lastTime = 0.0f;
+	//private float _lastTime = 0.0f;
 	//private float _detaPressTime = 0.0f;
 	private float _degressPerSecond = 0.0f;
 
@@ -64,7 +64,7 @@ public class TapController : MonoBehaviour {
 
 		FindBeatDetector ();
 
-		audioBeatDetectorScript.StartSampling (2);
+		audioBeatDetectorScript.StartSampling (4);
 	}
 	
 	void Update () {
@@ -101,7 +101,7 @@ public class TapController : MonoBehaviour {
 			}
 			*/
 
-			_lastTime = Time.time;
+			//_lastTime = Time.time;
 
 			GameObject _tObj = QueryTapObjectsOnTap ();
 
@@ -287,9 +287,9 @@ public class TapController : MonoBehaviour {
 			Debug.Log ("DetermineBeat - successFulStart : averageDeltaTime = " + averageDeltaTime);
 		}
 
-		if(audioBeatDetectorScript.isSampleReady() == true) {
-			audioBeatDetectorScript.StartSampling (4);
-		}
+		//if(audioBeatDetectorScript.isSampleReady() == true) {
+		//	audioBeatDetectorScript.StartSampling (4);
+		//}
 		
 	}
 
